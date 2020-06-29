@@ -3,7 +3,10 @@ package main
 import (
 	"image/color"
 	_ "image/jpeg"
+	"math"
 	"math/rand"
+
+	"github.com/hajimehoshi/ebiten/inpututil"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -18,11 +21,17 @@ const (
 )
 
 var tilesImage *ebiten.Image
+var flappyImage *ebiten.Image
 
 // Game ...
 type Game struct {
 	cameraX int
 	cameraY int
+
+	// The flappy's position
+	x16  int
+	y16  int
+	vy16 int
 
 	// Pipes
 	pipeTileYs []int
@@ -34,6 +43,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	flappyImage, _, err = ebitenutil.NewImageFromFile("flappy.png", ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // NewGame ...
@@ -41,6 +54,8 @@ func NewGame() *Game {
 	g := &Game{}
 	g.cameraX = 0
 	g.cameraY = 0
+	g.x16 = 0
+	g.y16 = 100 * 16
 	g.pipeTileYs = make([]int, 256)
 	for i := range g.pipeTileYs {
 		g.pipeTileYs[i] = rand.Intn(6) + 2
@@ -74,6 +89,20 @@ func (g *Game) pipeAt(tileX int) (tileY int, ok bool) {
 // Update ...
 func (g *Game) Update(screen *ebiten.Image) error {
 	g.cameraX += 2
+	g.x16 += 32
+
+	// Gravity
+	g.vy16 += 4
+	if g.vy16 > 96 {
+		g.vy16 = 96
+	}
+
+	g.y16 += g.vy16
+
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		g.vy16 = -96
+	}
+
 	return nil
 }
 
@@ -91,9 +120,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
 			float64((ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
 		screen.DrawImage(tilesImage, &op)
-
+		ebitenutil.DebugPrint(screen, "")
 		//pipe
 		if _, ok := g.pipeAt(floorDiv(g.cameraX, tileSize) + i); ok {
+			ebitenutil.DebugPrint(screen, "Here")
 			op := ebiten.DrawImageOptions{}
 			image, _ := ebiten.NewImage(20, 20, ebiten.FilterDefault)
 			op.GeoM.Reset()
@@ -104,6 +134,18 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			screen.DrawImage(image, &op)
 		}
 	}
+	g.drawFlappy(screen)
+}
+
+func (g *Game) drawFlappy(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	w, h := flappyImage.Size()
+	op.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)
+	op.GeoM.Rotate(float64(g.vy16) / 96.0 * math.Pi / 6)
+	op.GeoM.Translate(float64(w)/2.0, float64(h)/2.0)
+	op.GeoM.Translate(float64(g.x16/16.0)-float64(g.cameraX), float64(g.y16/16.0)-float64(g.cameraY))
+	op.Filter = ebiten.FilterLinear
+	screen.DrawImage(flappyImage, op)
 }
 
 // Layout ...
