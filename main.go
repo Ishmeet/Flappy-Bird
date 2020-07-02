@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	_ "image/jpeg"
 	"math"
@@ -117,13 +118,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op := ebiten.DrawImageOptions{}
 	for i := -2; i < nx+1; i++ {
 		op.GeoM.Reset()
+		// op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
+		// 	float64((ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
 		op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
 			float64((ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
 		screen.DrawImage(tilesImage, &op)
-		ebitenutil.DebugPrint(screen, "")
+		// ebitenutil.DebugPrint(screen, "")
 		//pipe
 		if _, ok := g.pipeAt(floorDiv(g.cameraX, tileSize) + i); ok {
-			ebitenutil.DebugPrint(screen, "Here")
+			// ebitenutil.DebugPrint(screen, "Here")
 			op := ebiten.DrawImageOptions{}
 			image, _ := ebiten.NewImage(20, 20, ebiten.FilterDefault)
 			op.GeoM.Reset()
@@ -134,6 +137,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			screen.DrawImage(image, &op)
 		}
 	}
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("X: %f, Y: %d", float64(-2*tileSize-floorMod(g.cameraX, tileSize)), (ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
 	g.drawFlappy(screen)
 }
 
