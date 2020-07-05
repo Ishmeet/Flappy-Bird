@@ -125,6 +125,10 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		g.vy16 = -96
 	}
 
+	if g.hit(screen) {
+		NewGame()
+	}
+
 	return nil
 }
 
@@ -168,7 +172,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 	g.drawFlappy(screen)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
+	// ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
+}
+
+func (g *Game) hit(screen *ebiten.Image) bool {
+	_, h := flappyImage.Size()
+	// X0 := g.x16
+	// X1 := g.x16 + w
+	// Y0 := g.y16
+	// Y1 := g.y16 + h
+	if float64(g.y16+h/16.0)-float64(g.cameraY) >= screenHeight-tileSize {
+		return true
+	}
+	return false
 }
 
 func (g *Game) drawClouds(screen *ebiten.Image) {
@@ -189,6 +205,7 @@ func (g *Game) drawFlappy(screen *ebiten.Image) {
 	op.GeoM.Translate(float64(g.x16/16.0)-float64(g.cameraX), float64(g.y16/16.0)-float64(g.cameraY))
 	op.Filter = ebiten.FilterLinear
 	screen.DrawImage(flappyImage, op)
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("h: %f, Y1: %f", h, float64(g.y16/16.0)-float64(g.cameraY)))
 }
 
 // Layout ...
