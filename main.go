@@ -20,6 +20,7 @@ const (
 	pipeStartOffsetX = 10
 	pipeIntervalX    = 10
 	pipeGapY         = 5
+	pipeWidth        = 2 * tileSize
 )
 
 var tilesImage *ebiten.Image
@@ -126,7 +127,10 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	}
 
 	if g.hit(screen) {
-		NewGame()
+		g.cameraX = 0
+		g.cameraY = 0
+		g.x16 = 0
+		g.y16 = 0
 	}
 
 	return nil
@@ -176,13 +180,36 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) hit(screen *ebiten.Image) bool {
-	_, h := flappyImage.Size()
-	// X0 := g.x16
-	// X1 := g.x16 + w
-	// Y0 := g.y16
-	// Y1 := g.y16 + h
-	if float64(g.y16+h/16.0)-float64(g.cameraY) >= screenHeight-tileSize {
+	w, h := flappyImage.Size()
+	X0 := floorDiv(g.x16, 16)
+	Y0 := floorDiv(g.y16, 16)
+	X1 := X0 + w
+	Y1 := Y0 + h
+	if Y0 < -tileSize*2 {
 		return true
+	}
+	if Y1 >= screenHeight-tileSize {
+		return true
+	}
+	xMin := floorDiv(X0-pipeWidth, tileSize)
+	xMax := floorDiv(X0+w, tileSize)
+	for x := xMin; x <= xMax; x++ {
+		y, ok := g.pipeAt(x)
+		if !ok {
+			continue
+		}
+		if X0 >= x*tileSize+pipeWidth {
+			continue
+		}
+		if X1 < x*tileSize {
+			continue
+		}
+		if Y0 < y*tileSize {
+			return true
+		}
+		if Y1 >= (y+pipeGapY)*tileSize {
+			return true
+		}
 	}
 	return false
 }
