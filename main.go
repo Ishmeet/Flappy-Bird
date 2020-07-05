@@ -24,6 +24,10 @@ const (
 
 var tilesImage *ebiten.Image
 var flappyImage *ebiten.Image
+var pipeBaseImage *ebiten.Image
+var pipeHeadImage *ebiten.Image
+var cloud1Image *ebiten.Image
+var cloud2Image *ebiten.Image
 
 // Game ...
 type Game struct {
@@ -46,6 +50,22 @@ func init() {
 		panic(err)
 	}
 	flappyImage, _, err = ebitenutil.NewImageFromFile("flappy.png", ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
+	pipeBaseImage, _, err = ebitenutil.NewImageFromFile("pipeBase.png", ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
+	pipeHeadImage, _, err = ebitenutil.NewImageFromFile("pipeHead.png", ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
+	cloud1Image, _, err = ebitenutil.NewImageFromFile("cloud1.png", ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
+	cloud2Image, _, err = ebitenutil.NewImageFromFile("cloud2.png", ebiten.FilterDefault)
 	if err != nil {
 		panic(err)
 	}
@@ -111,7 +131,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 // Draw ...
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0x80, 0xa0, 0xc0, 0xff})
-
+	g.drawClouds(screen)
 	const (
 		nx = screenWidth / tileSize
 		ny = screenHeight / tileSize
@@ -126,21 +146,38 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		//pipe
 		if tileY, ok := g.pipeAt(floorDiv(g.cameraX, tileSize) + i); ok {
 			for j := 0; j < tileY; j++ {
-				ebitenutil.DrawRect(screen, float64(i*tileSize-floorMod(g.cameraX, tileSize)),
-					float64(j*tileSize-floorMod(g.cameraY, tileSize)),
-					64, 32,
-					color.RGBA{0xff, 0, 0, 0xff})
+				op.GeoM.Reset()
+				op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
+					float64(j*tileSize-floorMod(g.cameraY, tileSize)))
+				if j == tileY-1 {
+					screen.DrawImage(pipeHeadImage, &op)
+				} else {
+					screen.DrawImage(pipeBaseImage, &op)
+				}
 			}
 			for j := tileY + pipeGapY; j < screenHeight/tileSize-1; j++ {
-				ebitenutil.DrawRect(screen, float64(i*tileSize-floorMod(g.cameraX, tileSize)),
-					float64(j*tileSize-floorMod(g.cameraY, tileSize)),
-					64, 32,
-					color.RGBA{0xff, 0, 0, 0xff})
+				op.GeoM.Reset()
+				op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
+					float64(j*tileSize-floorMod(g.cameraY, tileSize)))
+				if j == tileY+pipeGapY {
+					screen.DrawImage(pipeHeadImage, &op)
+				} else {
+					screen.DrawImage(pipeBaseImage, &op)
+				}
 			}
 		}
 	}
 	g.drawFlappy(screen)
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
+}
+
+func (g *Game) drawClouds(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(100, 50)
+	screen.DrawImage(cloud1Image, op)
+	op.GeoM.Reset()
+	op.GeoM.Translate(450, 200)
+	screen.DrawImage(cloud2Image, op)
 }
 
 func (g *Game) drawFlappy(screen *ebiten.Image) {
