@@ -176,7 +176,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 	g.drawFlappy(screen)
-	// ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
 }
 
 func (g *Game) hit(screen *ebiten.Image) bool {
@@ -232,7 +232,6 @@ func (g *Game) drawFlappy(screen *ebiten.Image) {
 	op.GeoM.Translate(float64(g.x16/16.0)-float64(g.cameraX), float64(g.y16/16.0)-float64(g.cameraY))
 	op.Filter = ebiten.FilterLinear
 	screen.DrawImage(flappyImage, op)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("h: %f, Y1: %f", h, float64(g.y16/16.0)-float64(g.cameraY)))
 }
 
 // Layout ...
