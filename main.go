@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"image/color"
 	_ "image/jpeg"
+	"io/ioutil"
 	"math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/inpututil"
 
+	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/text"
+	"golang.org/x/image/font"
 )
 
 const (
@@ -29,6 +33,7 @@ var pipeBaseImage *ebiten.Image
 var pipeHeadImage *ebiten.Image
 var cloud1Image *ebiten.Image
 var cloud2Image *ebiten.Image
+var robotoBNormalFont font.Face
 
 // Game ...
 type Game struct {
@@ -70,6 +75,23 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func init() {
+	b, err := ioutil.ReadFile("Roboto-Black.ttf")
+	if err != nil {
+		panic(err)
+	}
+	tt, err := truetype.Parse(b)
+	if err != nil {
+		panic(err)
+	}
+	const dpi = 72
+	robotoBNormalFont = truetype.NewFace(tt, &truetype.Options{
+		Size:    12,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
 }
 
 // NewGame ...
@@ -176,7 +198,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 	g.drawFlappy(screen)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
+	// ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
+	text.Draw(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), robotoBNormalFont, 0, 10, color.White)
 }
 
 func (g *Game) hit(screen *ebiten.Image) bool {
