@@ -128,13 +128,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			for j := 0; j < tileY; j++ {
 				ebitenutil.DrawRect(screen, float64(i*tileSize-floorMod(g.cameraX, tileSize)),
 					float64(j*tileSize-floorMod(g.cameraY, tileSize)),
-					32, 32,
+					64, 32,
 					color.RGBA{0xff, 0, 0, 0xff})
 			}
 			for j := tileY + pipeGapY; j < screenHeight/tileSize-1; j++ {
 				ebitenutil.DrawRect(screen, float64(i*tileSize-floorMod(g.cameraX, tileSize)),
 					float64(j*tileSize-floorMod(g.cameraY, tileSize)),
-					32, 32,
+					64, 32,
 					color.RGBA{0xff, 0, 0, 0xff})
 			}
 		}
