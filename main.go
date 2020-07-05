@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	_ "image/jpeg"
 	"math"
@@ -16,8 +17,9 @@ const (
 	screenWidth      = 640
 	screenHeight     = 480
 	tileSize         = 32
-	pipeStartOffsetX = 8
-	pipeIntervalX    = 8
+	pipeStartOffsetX = 10
+	pipeIntervalX    = 10
+	pipeGapY         = 5
 )
 
 var tilesImage *ebiten.Image
@@ -122,18 +124,23 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		screen.DrawImage(tilesImage, &op)
 
 		//pipe
-		if _, ok := g.pipeAt(floorDiv(g.cameraX, tileSize) + i); ok {
-			op := ebiten.DrawImageOptions{}
-			image, _ := ebiten.NewImage(20, 20, ebiten.FilterDefault)
-			op.GeoM.Reset()
-			op.GeoM.Scale(20, 20)
-			op.ColorM.Scale(62, 66, 46, 0.1)
-			op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
-				float64(i*tileSize-floorMod(g.cameraY, tileSize)))
-			screen.DrawImage(image, &op)
+		if tileY, ok := g.pipeAt(floorDiv(g.cameraX, tileSize) + i); ok {
+			for j := 0; j < tileY; j++ {
+				ebitenutil.DrawRect(screen, float64(i*tileSize-floorMod(g.cameraX, tileSize)),
+					float64(j*tileSize-floorMod(g.cameraY, tileSize)),
+					32, 32,
+					color.RGBA{0xff, 0, 0, 0xff})
+			}
+			for j := tileY + pipeGapY; j < screenHeight/tileSize-1; j++ {
+				ebitenutil.DrawRect(screen, float64(i*tileSize-floorMod(g.cameraX, tileSize)),
+					float64(j*tileSize-floorMod(g.cameraY, tileSize)),
+					32, 32,
+					color.RGBA{0xff, 0, 0, 0xff})
+			}
 		}
 	}
 	g.drawFlappy(screen)
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
 }
 
 func (g *Game) drawFlappy(screen *ebiten.Image) {
