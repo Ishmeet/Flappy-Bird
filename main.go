@@ -47,6 +47,9 @@ type Game struct {
 
 	// Pipes
 	pipeTileYs []int
+
+	score     int
+	bestscore int
 }
 
 func init() {
@@ -198,8 +201,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 	g.drawFlappy(screen)
-	// ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
 	text.Draw(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), robotoBNormalFont, 0, 10, color.White)
+	g.score = g.currentScore(screen)
+	text.Draw(screen, fmt.Sprintf("Score: %d", g.score), robotoBNormalFont, 400, 10, color.Opaque)
+	text.Draw(screen, fmt.Sprintf("Best: %d", g.bestScore()), robotoBNormalFont, 500, 10, color.Opaque)
 }
 
 func (g *Game) hit(screen *ebiten.Image) bool {
@@ -235,6 +240,21 @@ func (g *Game) hit(screen *ebiten.Image) bool {
 		}
 	}
 	return false
+}
+
+func (g *Game) currentScore(screen *ebiten.Image) int {
+	x := floorDiv(g.x16, 16) / tileSize
+	if x <= pipeStartOffsetX {
+		return 0
+	}
+	return floorDiv(x-pipeStartOffsetX, pipeIntervalX)
+}
+
+func (g *Game) bestScore() int {
+	if g.score > g.bestscore {
+		g.bestscore = g.score
+	}
+	return g.bestscore
 }
 
 func (g *Game) drawClouds(screen *ebiten.Image) {
