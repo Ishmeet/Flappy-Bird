@@ -35,6 +35,10 @@ var cloud1Image *ebiten.Image
 var cloud2Image *ebiten.Image
 var robotoBNormalFont font.Face
 
+type rays struct {
+	x0, y0, x1, y1 int
+}
+
 // Game ...
 type Game struct {
 	cameraX int
@@ -101,6 +105,7 @@ func init() {
 func NewGame() *Game {
 	g := &Game{}
 	g.cameraX = 0
+	// g.cameraX = -240
 	g.cameraY = 0
 	g.x16 = 0
 	g.y16 = 100 * 16
@@ -205,6 +210,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.score = g.currentScore(screen)
 	text.Draw(screen, fmt.Sprintf("Score: %d", g.score), robotoBNormalFont, 400, 10, color.Opaque)
 	text.Draw(screen, fmt.Sprintf("Best: %d", g.bestScore()), robotoBNormalFont, 500, 10, color.Opaque)
+
+	x0 := floorDiv(g.x16, 16) - g.cameraX
+	y0 := floorDiv(g.y16, 16) - g.cameraY
+	ebitenutil.DrawLine(screen, float64(x0), float64(y0), 0, 0, color.RGBA{255, 255, 0, 150})
+	ebitenutil.DrawLine(screen, float64(x0), float64(y0), screenWidth, screenHeight, color.RGBA{255, 255, 0, 150})
+	ebitenutil.DrawLine(screen, float64(x0), float64(y0), screenWidth, 0, color.RGBA{255, 255, 0, 150})
+	ebitenutil.DrawLine(screen, float64(x0), float64(y0), 0, screenHeight, color.RGBA{255, 255, 0, 150})
 }
 
 func (g *Game) hit(screen *ebiten.Image) bool {
