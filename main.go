@@ -104,8 +104,8 @@ func init() {
 // NewGame ...
 func NewGame() *Game {
 	g := &Game{}
-	g.cameraX = 0
-	// g.cameraX = -240
+	// g.cameraX = 0
+	g.cameraX = -100
 	g.cameraY = 0
 	g.x16 = 0
 	g.y16 = 100 * 16
@@ -156,8 +156,12 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		g.vy16 = -96
 	}
 
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		return fmt.Errorf("Escape Pressed")
+	}
+
 	if g.hit(screen) {
-		g.cameraX = 0
+		g.cameraX = -100
 		g.cameraY = 0
 		g.x16 = 0
 		g.y16 = 0
@@ -211,8 +215,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprintf("Score: %d", g.score), robotoBNormalFont, 400, 10, color.Opaque)
 	text.Draw(screen, fmt.Sprintf("Best: %d", g.bestScore()), robotoBNormalFont, 500, 10, color.Opaque)
 
-	x0 := floorDiv(g.x16, 16) - g.cameraX
-	y0 := floorDiv(g.y16, 16) - g.cameraY
+	x0 := floorDiv(g.x16, 16) - g.cameraX + 16
+	y0 := floorDiv(g.y16, 16) - g.cameraY + 16
 	ebitenutil.DrawLine(screen, float64(x0), float64(y0), 0, 0, color.RGBA{255, 255, 0, 150})
 	ebitenutil.DrawLine(screen, float64(x0), float64(y0), screenWidth, screenHeight, color.RGBA{255, 255, 0, 150})
 	ebitenutil.DrawLine(screen, float64(x0), float64(y0), screenWidth, 0, color.RGBA{255, 255, 0, 150})
