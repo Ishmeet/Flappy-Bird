@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	_ "image/jpeg"
-	"io/ioutil"
 	"math"
 	"math/rand"
 
@@ -85,11 +84,30 @@ func init() {
 }
 
 func init() {
-	b, err := ioutil.ReadFile("Roboto-Black.ttf")
-	if err != nil {
-		panic(err)
-	}
-	tt, err := truetype.Parse(b)
+	// b, err := ioutil.ReadFile("Roboto-Black.ttf")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// ------------------------------------------------------------------------------
+	// To be removed, only using it right now to have an in memory font file
+	// f, err := os.Create("fontRoboto.go")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// a := `package fontRoboto
+
+	// // RobotoTTF ...
+	// var RobotoTTF = []byte{`
+	// f.WriteString(a)
+	// for _, v := range b {
+	// 	s := strconv.Itoa(int(v))
+	// 	f.Write([]byte(s))
+	// 	f.Write([]byte{',', ' '})
+	// }
+	// f.Write([]byte{'}'})
+	// f.Write([]byte{'\n'})
+	// ------------------------------------------------------------------------------
+	tt, err := truetype.Parse(RobotoTTF)
 	if err != nil {
 		panic(err)
 	}
