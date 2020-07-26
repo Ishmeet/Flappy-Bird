@@ -233,12 +233,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprintf("Score: %d", g.score), robotoBNormalFont, 400, 10, color.Opaque)
 	text.Draw(screen, fmt.Sprintf("Best: %d", g.bestScore()), robotoBNormalFont, 500, 10, color.Opaque)
 
-	x0 := floorDiv(g.x16, 16) - g.cameraX + 16
-	y0 := floorDiv(g.y16, 16) - g.cameraY + 16
-	ebitenutil.DrawLine(screen, float64(x0), float64(y0), 0, 0, color.RGBA{255, 255, 0, 150})
-	ebitenutil.DrawLine(screen, float64(x0), float64(y0), screenWidth, screenHeight, color.RGBA{255, 255, 0, 150})
-	ebitenutil.DrawLine(screen, float64(x0), float64(y0), screenWidth, 0, color.RGBA{255, 255, 0, 150})
-	ebitenutil.DrawLine(screen, float64(x0), float64(y0), 0, screenHeight, color.RGBA{255, 255, 0, 150})
+	// x0 := floorDiv(g.x16, 16) - g.cameraX + 16
+	// y0 := floorDiv(g.y16, 16) - g.cameraY + 16
+	// ebitenutil.DrawLine(screen, float64(x0), float64(y0), 0, 0, color.RGBA{255, 255, 0, 150})
+	// ebitenutil.DrawLine(screen, float64(x0), float64(y0), screenWidth, screenHeight, color.RGBA{255, 255, 0, 150})
+	// ebitenutil.DrawLine(screen, float64(x0), float64(y0), screenWidth, 0, color.RGBA{255, 255, 0, 150})
+	// ebitenutil.DrawLine(screen, float64(x0), float64(y0), 0, screenHeight, color.RGBA{255, 255, 0, 150})
 }
 
 func (g *Game) hit(screen *ebiten.Image) bool {
