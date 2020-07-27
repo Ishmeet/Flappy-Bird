@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	_ "image/jpeg"
+	"log"
 	"math"
 	"math/rand"
 
@@ -11,6 +12,8 @@ import (
 
 	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/audio"
+	"github.com/hajimehoshi/ebiten/audio/wav"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/text"
 	"golang.org/x/image/font"
@@ -26,13 +29,21 @@ const (
 	pipeWidth        = 2 * tileSize
 )
 
+// Images
 var tilesImage *ebiten.Image
 var flappyImage *ebiten.Image
 var pipeBaseImage *ebiten.Image
 var pipeHeadImage *ebiten.Image
 var cloud1Image *ebiten.Image
 var cloud2Image *ebiten.Image
+
+//Fonts
 var robotoBNormalFont font.Face
+
+// Audio
+var audioContext *audio.Context
+var wooshAudioPlayer *audio.Player
+var tingAudioPlayer *audio.Player
 
 type rays struct {
 	x0, y0, x1, y1 int
@@ -52,6 +63,7 @@ type Game struct {
 	pipeTileYs []int
 
 	score     int
+	prevscore int
 	bestscore int
 }
 
@@ -84,20 +96,20 @@ func init() {
 }
 
 func init() {
-	// b, err := ioutil.ReadFile("Roboto-Black.ttf")
+	// b, err := ioutil.ReadFile("Ontiva.com_TING_SOUND_EFFECT-[AudioTrimmer.com].wav")
 	// if err != nil {
 	// 	panic(err)
 	// }
 	// ------------------------------------------------------------------------------
 	// To be removed, only using it right now to have an in memory font file
-	// f, err := os.Create("fontRoboto.go")
+	// f, err := os.Create("tingSoundEffect.go")
 	// if err != nil {
 	// 	panic(err)
 	// }
-	// a := `package fontRoboto
+	// a := `package main
 
-	// // RobotoTTF ...
-	// var RobotoTTF = []byte{`
+	// // TingSoundEffect ...
+	// var TingSoundEffect = []byte{`
 	// f.WriteString(a)
 	// for _, v := range b {
 	// 	s := strconv.Itoa(int(v))
@@ -107,6 +119,38 @@ func init() {
 	// f.Write([]byte{'}'})
 	// f.Write([]byte{'\n'})
 	// ------------------------------------------------------------------------------
+}
+
+func init() {
+	var err error
+	audioContext, err = audio.NewContext(44100)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Woosh
+	d, err := wav.Decode(audioContext, audio.BytesReadSeekCloser(WooshSoundEffect))
+	if err != nil {
+		log.Fatal(err)
+	}
+	wooshAudioPlayer, err = audio.NewPlayer(audioContext, d)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wooshAudioPlayer.SetVolume(0.1)
+
+	// Ting
+	d, err = wav.Decode(audioContext, audio.BytesReadSeekCloser(TingSoundEffect))
+	if err != nil {
+		log.Fatal(err)
+	}
+	tingAudioPlayer, err = audio.NewPlayer(audioContext, d)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tingAudioPlayer.SetVolume(0.1)
+}
+
+func init() {
 	tt, err := truetype.Parse(RobotoTTF)
 	if err != nil {
 		panic(err)
@@ -172,6 +216,8 @@ func (g *Game) Update(screen *ebiten.Image) error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		g.vy16 = -96
+		wooshAudioPlayer.Rewind()
+		wooshAudioPlayer.Play()
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -184,6 +230,14 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		g.x16 = 0
 		g.y16 = 0
 	}
+
+	g.score = g.currentScore()
+	g.tingSound()
+	// if g.prevscore != g.score {
+	// 	tingAudioPlayer.Rewind()
+	// 	tingAudioPlayer.Play()
+	// }
+	// g.prevscore = g.score
 
 	return nil
 }
@@ -229,7 +283,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 	g.drawFlappy(screen)
 	text.Draw(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), robotoBNormalFont, 0, 10, color.White)
-	g.score = g.currentScore(screen)
 	text.Draw(screen, fmt.Sprintf("Score: %d", g.score), robotoBNormalFont, 400, 10, color.Opaque)
 	text.Draw(screen, fmt.Sprintf("Best: %d", g.bestScore()), robotoBNormalFont, 500, 10, color.Opaque)
 
@@ -276,12 +329,24 @@ func (g *Game) hit(screen *ebiten.Image) bool {
 	return false
 }
 
-func (g *Game) currentScore(screen *ebiten.Image) int {
+func (g *Game) currentScore() int {
 	x := floorDiv(g.x16, 16) / tileSize
 	if x <= pipeStartOffsetX {
 		return 0
 	}
 	return floorDiv(x-pipeStartOffsetX, pipeIntervalX)
+}
+
+func (g *Game) tingSound() {
+	x := floorDiv(g.x16, 16) / tileSize
+	if x <= pipeStartOffsetX {
+		return
+	}
+	x = x - pipeStartOffsetX
+	if x%pipeIntervalX == 0 {
+		tingAudioPlayer.Rewind()
+		tingAudioPlayer.Play()
+	}
 }
 
 func (g *Game) bestScore() int {
