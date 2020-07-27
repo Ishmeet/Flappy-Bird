@@ -21,8 +21,8 @@ const (
 	screenHeight     = 480
 	tileSize         = 32
 	pipeStartOffsetX = 10
-	pipeIntervalX    = 8
-	pipeGapY         = 4
+	pipeIntervalX    = 6
+	pipeGapY         = 5
 	pipeWidth        = 2 * tileSize
 )
 
