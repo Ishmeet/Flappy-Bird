@@ -1,4 +1,4 @@
-ibmcloud login -a cloud.ibm.com -r us-south -g Default --apikey EHbg8kLikNjQWW2uZt4dqF5jqw8FtG5yWgiU5pYCTg_D
+ibmcloud login -a cloud.ibm.com -r us-south -g Default --apikey <cloud-key>
 ibmcloud ks cluster config --cluster bseq90dd0hbo035bbs5g
 kubectl config current-context
 ibmcloud cr region-set us-south
