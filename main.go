@@ -39,11 +39,14 @@ var cloud2Image *ebiten.Image
 
 //Fonts
 var robotoBNormalFont font.Face
+var robotoBLargeFont font.Face
 
 // Audio
 var audioContext *audio.Context
 var wooshAudioPlayer *audio.Player
 var tingAudioPlayer *audio.Player
+var cascadeAudioPlayer *audio.Player
+var trumpetAudioPlayer *audio.Player
 
 type rays struct {
 	x0, y0, x1, y1 int
@@ -63,8 +66,9 @@ type Game struct {
 	pipeTileYs []int
 
 	score     int
-	prevscore int
 	bestscore int
+
+	mode int
 }
 
 func init() {
@@ -96,20 +100,20 @@ func init() {
 }
 
 func init() {
-	// b, err := ioutil.ReadFile("Ontiva.com_TING_SOUND_EFFECT-[AudioTrimmer.com].wav")
+	// b, err := ioutil.ReadFile("Ontiva.com_TRUMPET_SOUND_EFFECT-[AudioTrimmer.com].wav")
 	// if err != nil {
 	// 	panic(err)
 	// }
 	// ------------------------------------------------------------------------------
 	// To be removed, only using it right now to have an in memory font file
-	// f, err := os.Create("tingSoundEffect.go")
+	// f, err := os.Create("trumpetSoundEffect.go")
 	// if err != nil {
 	// 	panic(err)
 	// }
 	// a := `package main
 
-	// // TingSoundEffect ...
-	// var TingSoundEffect = []byte{`
+	// // TrumpetSoundEffect ...
+	// var TrumpetSoundEffect = []byte{`
 	// f.WriteString(a)
 	// for _, v := range b {
 	// 	s := strconv.Itoa(int(v))
@@ -148,6 +152,28 @@ func init() {
 		log.Fatal(err)
 	}
 	tingAudioPlayer.SetVolume(0.1)
+
+	// Cascade
+	d, err = wav.Decode(audioContext, audio.BytesReadSeekCloser(CascadeSoundEffect))
+	if err != nil {
+		log.Fatal(err)
+	}
+	cascadeAudioPlayer, err = audio.NewPlayer(audioContext, d)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cascadeAudioPlayer.SetVolume(0.1)
+
+	// Trumpet
+	d, err = wav.Decode(audioContext, audio.BytesReadSeekCloser(TrumpetSoundEffect))
+	if err != nil {
+		log.Fatal(err)
+	}
+	trumpetAudioPlayer, err = audio.NewPlayer(audioContext, d)
+	if err != nil {
+		log.Fatal(err)
+	}
+	trumpetAudioPlayer.SetVolume(0.1)
 }
 
 func init() {
@@ -158,6 +184,11 @@ func init() {
 	const dpi = 72
 	robotoBNormalFont = truetype.NewFace(tt, &truetype.Options{
 		Size:    12,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+	robotoBLargeFont = truetype.NewFace(tt, &truetype.Options{
+		Size:    24,
 		DPI:     dpi,
 		Hinting: font.HintingFull,
 	})
@@ -229,15 +260,12 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		g.cameraY = 0
 		g.x16 = 0
 		g.y16 = 0
+		trumpetAudioPlayer.Rewind()
+		trumpetAudioPlayer.Play()
 	}
 
 	g.score = g.currentScore()
-	g.tingSound()
-	// if g.prevscore != g.score {
-	// 	tingAudioPlayer.Rewind()
-	// 	tingAudioPlayer.Play()
-	// }
-	// g.prevscore = g.score
+	g.sounds()
 
 	return nil
 }
@@ -337,7 +365,7 @@ func (g *Game) currentScore() int {
 	return floorDiv(x-pipeStartOffsetX, pipeIntervalX)
 }
 
-func (g *Game) tingSound() {
+func (g *Game) sounds() {
 	x := floorDiv(g.x16, 16) / tileSize
 	if x <= pipeStartOffsetX {
 		return
@@ -346,6 +374,10 @@ func (g *Game) tingSound() {
 	if x%pipeIntervalX == 0 {
 		tingAudioPlayer.Rewind()
 		tingAudioPlayer.Play()
+	}
+	if g.score > 0 && g.score%5 == 0 {
+		cascadeAudioPlayer.Rewind()
+		cascadeAudioPlayer.Play()
 	}
 }
 
