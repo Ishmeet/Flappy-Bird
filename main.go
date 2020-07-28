@@ -48,6 +48,19 @@ var tingAudioPlayer *audio.Player
 var cascadeAudioPlayer *audio.Player
 var trumpetAudioPlayer *audio.Player
 
+// Mode
+const (
+	gameModeTitle = 0
+	gameModePlay  = 1
+	gameModeOver  = 2
+)
+
+// nx, ny
+const (
+	nx = screenWidth / tileSize
+	ny = screenHeight / tileSize
+)
+
 type rays struct {
 	x0, y0, x1, y1 int
 }
@@ -56,6 +69,9 @@ type rays struct {
 type Game struct {
 	cameraX int
 	cameraY int
+
+	// Intro/Over variables
+	otherModesCameraX int
 
 	// The flappy's position
 	x16  int
@@ -206,6 +222,7 @@ func NewGame() *Game {
 	for i := range g.pipeTileYs {
 		g.pipeTileYs[i] = rand.Intn(6) + 2
 	}
+	g.mode = gameModeTitle
 	return g
 }
 
@@ -234,39 +251,51 @@ func (g *Game) pipeAt(tileX int) (tileY int, ok bool) {
 
 // Update ...
 func (g *Game) Update(screen *ebiten.Image) error {
-	g.cameraX += 2
-	g.x16 += 32
+	switch g.mode {
+	case gameModeTitle:
+		if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+			g.mode = gameModePlay
+		}
+	case gameModePlay:
+		g.cameraX += 2
+		g.x16 += 32
 
-	// Gravity
-	g.vy16 += 4
-	if g.vy16 > 96 {
-		g.vy16 = 96
-	}
+		// Gravity
+		g.vy16 += 4
+		if g.vy16 > 96 {
+			g.vy16 = 96
+		}
 
-	g.y16 += g.vy16
+		g.y16 += g.vy16
 
-	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-		g.vy16 = -96
-		wooshAudioPlayer.Rewind()
-		wooshAudioPlayer.Play()
-	}
+		if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+			g.vy16 = -96
+			wooshAudioPlayer.Rewind()
+			wooshAudioPlayer.Play()
+		}
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		return fmt.Errorf("Escape Pressed")
-	}
+		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+			return fmt.Errorf("Escape Pressed")
+		}
 
-	if g.hit(screen) {
+		if g.hit(screen) {
+			trumpetAudioPlayer.Rewind()
+			trumpetAudioPlayer.Play()
+			g.mode = gameModeOver
+		}
+
+		g.score = g.currentScore()
+		g.sounds()
+	case gameModeOver:
 		g.cameraX = -100
 		g.cameraY = 0
 		g.x16 = 0
 		g.y16 = 0
-		trumpetAudioPlayer.Rewind()
-		trumpetAudioPlayer.Play()
+		if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+			g.score = 0
+			g.mode = gameModeTitle
+		}
 	}
-
-	g.score = g.currentScore()
-	g.sounds()
-
 	return nil
 }
 
@@ -274,46 +303,67 @@ func (g *Game) Update(screen *ebiten.Image) error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0x80, 0xa0, 0xc0, 0xff})
 	g.drawClouds(screen)
-	const (
-		nx = screenWidth / tileSize
-		ny = screenHeight / tileSize
-	)
-	op := ebiten.DrawImageOptions{}
-	for i := -2; i < nx+1; i++ {
-		op.GeoM.Reset()
-		op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
-			float64((ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
-		screen.DrawImage(tilesImage, &op)
+	switch g.mode {
+	case gameModeTitle, gameModeOver:
+		op := ebiten.DrawImageOptions{}
+		g.otherModesCameraX += 2
+		for i := -2; i < nx+1; i++ {
+			op.GeoM.Reset()
+			op.GeoM.Translate(float64(i*tileSize-floorMod(g.otherModesCameraX, tileSize)),
+				float64((ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
+			screen.DrawImage(tilesImage, &op)
+		}
+	case gameModePlay:
+		op := ebiten.DrawImageOptions{}
+		for i := -2; i < nx+1; i++ {
+			op.GeoM.Reset()
+			op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
+				float64((ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
+			screen.DrawImage(tilesImage, &op)
 
-		//pipe
-		if tileY, ok := g.pipeAt(floorDiv(g.cameraX, tileSize) + i); ok {
-			for j := 0; j < tileY; j++ {
-				op.GeoM.Reset()
-				op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
-					float64(j*tileSize-floorMod(g.cameraY, tileSize)))
-				if j == tileY-1 {
-					screen.DrawImage(pipeHeadImage, &op)
-				} else {
-					screen.DrawImage(pipeBaseImage, &op)
+			//pipe
+			if tileY, ok := g.pipeAt(floorDiv(g.cameraX, tileSize) + i); ok {
+				for j := 0; j < tileY; j++ {
+					op.GeoM.Reset()
+					op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
+						float64(j*tileSize-floorMod(g.cameraY, tileSize)))
+					if j == tileY-1 {
+						screen.DrawImage(pipeHeadImage, &op)
+					} else {
+						screen.DrawImage(pipeBaseImage, &op)
+					}
 				}
-			}
-			for j := tileY + pipeGapY; j < screenHeight/tileSize-1; j++ {
-				op.GeoM.Reset()
-				op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
-					float64(j*tileSize-floorMod(g.cameraY, tileSize)))
-				if j == tileY+pipeGapY {
-					screen.DrawImage(pipeHeadImage, &op)
-				} else {
-					screen.DrawImage(pipeBaseImage, &op)
+				for j := tileY + pipeGapY; j < screenHeight/tileSize-1; j++ {
+					op.GeoM.Reset()
+					op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
+						float64(j*tileSize-floorMod(g.cameraY, tileSize)))
+					if j == tileY+pipeGapY {
+						screen.DrawImage(pipeHeadImage, &op)
+					} else {
+						screen.DrawImage(pipeBaseImage, &op)
+					}
 				}
 			}
 		}
+		g.drawFlappy(screen)
 	}
-	g.drawFlappy(screen)
-	text.Draw(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), robotoBNormalFont, 0, 10, color.White)
-	text.Draw(screen, fmt.Sprintf("Score: %d", g.score), robotoBNormalFont, 400, 10, color.Opaque)
+
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()))
+	// text.Draw(screen, fmt.Sprintf("TPS: %0.2f, FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), robotoBNormalFont, 0, 10, color.White)
+	text.Draw(screen, fmt.Sprintf("%d", g.score), robotoBLargeFont, (screenWidth/2)-12, 50, color.Opaque)
 	text.Draw(screen, fmt.Sprintf("Best: %d", g.bestScore()), robotoBNormalFont, 500, 10, color.Opaque)
 
+	if g.mode == gameModeTitle {
+		text.Draw(screen, "FLOOOPY BIRD", robotoBLargeFont, (screenWidth/2)-150, (screenHeight/2)-50, color.White)
+		text.Draw(screen, fmt.Sprintf("BEST SCORE: %d", g.bestScore()), robotoBLargeFont, (screenWidth/2)-150, (screenHeight / 2), color.White)
+		text.Draw(screen, "PRESS SPACE TO START", robotoBNormalFont, (screenWidth/2)-150, (screenHeight/2)+30, color.White)
+	}
+
+	if g.mode == gameModeOver {
+		text.Draw(screen, "GAME OVER", robotoBLargeFont, (screenWidth/2)-150, (screenHeight/2)-50, color.White)
+		text.Draw(screen, fmt.Sprintf("YOUR SCORE: %d", g.score), robotoBLargeFont, (screenWidth/2)-150, (screenHeight / 2), color.White)
+		text.Draw(screen, "PRESS SPACE TO START", robotoBNormalFont, (screenWidth/2)-150, (screenHeight/2)+30, color.White)
+	}
 	// x0 := floorDiv(g.x16, 16) - g.cameraX + 16
 	// y0 := floorDiv(g.y16, 16) - g.cameraY + 16
 	// ebitenutil.DrawLine(screen, float64(x0), float64(y0), 0, 0, color.RGBA{255, 255, 0, 150})
@@ -371,7 +421,7 @@ func (g *Game) sounds() {
 		return
 	}
 	x = x - pipeStartOffsetX
-	if x%pipeIntervalX == 0 {
+	if x%pipeIntervalX == 0 && g.score%5 != 0 {
 		tingAudioPlayer.Rewind()
 		tingAudioPlayer.Play()
 	}
