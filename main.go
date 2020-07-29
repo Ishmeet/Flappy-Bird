@@ -61,6 +61,9 @@ const (
 	ny = screenHeight / tileSize
 )
 
+// spin
+var spin bool
+
 type rays struct {
 	x0, y0, x1, y1 int
 }
@@ -488,6 +491,12 @@ func (g *Game) drawClouds(screen *ebiten.Image) {
 	op.GeoM.Translate(100, 50)
 	screen.DrawImage(cloud1Image, op)
 	op.GeoM.Reset()
+	op.GeoM.Translate(400, 100)
+	screen.DrawImage(cloud1Image, op)
+	op.GeoM.Reset()
+	op.GeoM.Translate(200, 150)
+	screen.DrawImage(cloud1Image, op)
+	op.GeoM.Reset()
 	op.GeoM.Translate(450, 200)
 	screen.DrawImage(cloud2Image, op)
 }
@@ -496,7 +505,7 @@ func (g *Game) drawFlappy(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	w, h := flappyImage.Size()
 	op.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)
-	if g.score > 0 && g.score%5 == 0 {
+	if g.score > 0 && g.score%5 == 0 && cascadeAudioPlayer.IsPlaying() {
 		op.GeoM.Rotate(float64(ir) * math.Pi / 10)
 		ir++
 	} else {
