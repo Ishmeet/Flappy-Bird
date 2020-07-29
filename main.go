@@ -468,7 +468,7 @@ func (g *Game) sounds() {
 		tingAudioPlayer.Rewind()
 		tingAudioPlayer.Play()
 	}
-	if g.score > 0 && g.score%5 == 0 {
+	if g.score > 0 && g.score%5 == 0 && x%pipeIntervalX == 0 {
 		if !cascadeAudioPlayer.IsPlaying() {
 			cascadeAudioPlayer.Rewind()
 			cascadeAudioPlayer.Play()
@@ -496,7 +496,12 @@ func (g *Game) drawFlappy(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	w, h := flappyImage.Size()
 	op.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)
-	op.GeoM.Rotate(float64(g.vy16) / 96.0 * math.Pi / 6)
+	if g.score > 0 && g.score%5 == 0 {
+		op.GeoM.Rotate(float64(ir) * math.Pi / 10)
+		ir++
+	} else {
+		op.GeoM.Rotate(float64(g.vy16) / 96.0 * math.Pi / 6)
+	}
 	op.GeoM.Translate(float64(w)/2.0, float64(h)/2.0)
 	op.GeoM.Translate(float64(g.x16/16.0)-float64(g.cameraX), float64(g.y16/16.0)-float64(g.cameraY))
 	op.Filter = ebiten.FilterLinear
