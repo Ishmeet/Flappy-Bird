@@ -488,7 +488,9 @@ func (g *Game) bestScore() int {
 
 func (g *Game) drawClouds(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(100, 50)
+	op.GeoM.Translate(float64(100+tileSize-floorMod(g.cameraX, tileSize)),
+		float64(tileSize-floorMod(g.cameraY, tileSize)))
+	// op.GeoM.Translate(100, 50)
 	screen.DrawImage(cloud1Image, op)
 	op.GeoM.Reset()
 	op.GeoM.Translate(400, 100)
@@ -506,7 +508,7 @@ func (g *Game) drawFlappy(screen *ebiten.Image) {
 	w, h := flappyImage.Size()
 	op.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)
 	if g.score > 0 && g.score%5 == 0 && cascadeAudioPlayer.IsPlaying() {
-		op.GeoM.Rotate(float64(ir) * math.Pi / 10)
+		//op.GeoM.Rotate(float64(ir) * math.Pi / 10)
 		ir++
 	} else {
 		op.GeoM.Rotate(float64(g.vy16) / 96.0 * math.Pi / 6)
