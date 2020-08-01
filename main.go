@@ -266,7 +266,6 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	switch g.mode {
 	case gameModePlay:
 		g.cameraX += 2
-		g.cX += 1
 		g.x16 += 32
 
 		// Gravity
@@ -305,6 +304,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 			g.cameraY = 0
 		}
 	}
+	g.cX++
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		return fmt.Errorf("Escape Pressed")
 	}
@@ -318,6 +318,7 @@ var md float64
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0x80, 0xa0, 0xc0, 0xff})
 	g.drawClouds(screen)
+
 	switch g.mode {
 	case gameModePlay:
 		op := ebiten.DrawImageOptions{}
@@ -367,13 +368,28 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		for i = -2; i < nx+1; i++ {
 			op.GeoM.Reset()
 			if g.mode == gameModeOver {
+				// Tiles
 				op.GeoM.Translate(float64(i*tileSize-floorMod(g.cameraX, tileSize)),
 					float64((ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
-			} else {
+				screen.DrawImage(tilesImage, &op)
+
+				// Buildings
+				op.GeoM.Reset()
+				op.GeoM.Translate(float64(i*buildingsTileSize-floorMod(g.cameraX, buildingsTileSize)),
+					screenHeight-buildingsheight-tileSize)
+				screen.DrawImage(buildings, &op)
+			} else if g.mode == gameModeTitle {
+				// Tiles
 				op.GeoM.Translate(float64(i*tileSize-floorMod(g.otherModesCameraX, tileSize)),
 					float64((ny-1)*tileSize-floorMod(g.cameraY, tileSize)))
+				screen.DrawImage(tilesImage, &op)
+
+				// Buildings
+				op.GeoM.Reset()
+				op.GeoM.Translate(float64(i*buildingsTileSize-floorMod(g.cX, buildingsTileSize)),
+					screenHeight-buildingsheight-tileSize)
+				screen.DrawImage(buildings, &op)
 			}
-			screen.DrawImage(tilesImage, &op)
 
 			//pipe
 			if tileY, ok := g.pipeAt(floorDiv(g.cameraX, tileSize) + i); ok {
@@ -427,7 +443,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.Filter = ebiten.FilterLinear
 		screen.DrawImage(flappyImage, op)
 	}
-
 }
 
 func (g *Game) hit(screen *ebiten.Image) bool {
